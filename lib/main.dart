@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // 🔥 مهم
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,10 +13,8 @@ import 'package:medicine_app/screens/history.dart';
 import 'package:medicine_app/screens/calendar.dart';
 import 'package:medicine_app/screens/notifications.dart';
 import 'package:medicine_app/screens/reports.dart';
-import 'package:medicine_app/screens/integration.dart';
-import 'package:medicine_app/screens/ring_tones.dart';
 import 'package:medicine_app/screens/signup.dart';
-import 'package:medicine_app/screens/landing_page.dart';
+import 'package:medicine_app/screens/welcome_page.dart';
 import 'package:medicine_app/screens/profile.dart';
 
 void main() async {
@@ -26,7 +24,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 🔥 تشغيل الإشعارات فقط على الموبايل
+  // 🔔 تشغيل الإشعارات فقط على الموبايل
   if (!kIsWeb) {
     await NotificationService.init();
     await NotificationService.requestPermission();
@@ -49,11 +47,13 @@ class MyApp extends StatelessWidget {
           );
         }
 
+        // ✅ لو المستخدم مسجل دخول
         if (snapshot.hasData) {
           return const HomePage();
         }
 
-        return const LandingPage();
+        // ✅ لو مش مسجل دخول → Welcome
+        return const WelcomePage();
       },
     );
   }
@@ -65,10 +65,11 @@ class MyApp extends StatelessWidget {
       title: 'Medicine Reminder',
 
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2C7DA0)),
         useMaterial3: true,
       ),
 
+      // 🔥 دي أهم حاجة - التحكم في الدخول والخروج
       home: _getStartScreen(),
 
       routes: {
@@ -80,8 +81,6 @@ class MyApp extends StatelessWidget {
         '/calendar': (context) => const CalendarPage(),
         '/notifications': (context) => const NotificationsPage(),
         '/reports': (context) => const ReportsPage(),
-        '/integration': (context) => const IntegrationPage(),
-        '/ringtones': (context) => const RingTonesPage(),
         '/profile': (context) => const ProfilePage(),
       },
     );

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class LandingPage extends StatelessWidget {
-  const LandingPage({super.key});
+class WelcomePage extends StatelessWidget {
+  const WelcomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,16 +20,20 @@ class LandingPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.medication, size: 100, color: Color(0xFF2C7DA0)),
+
             const SizedBox(height: 20),
+
             const Text(
               "Medicine Reminder",
               style: TextStyle(
                 fontSize: 26,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.bold,
                 color: Color(0xFF2C3E50),
               ),
             ),
+
             const SizedBox(height: 10),
+
             const Text(
               "Manage your medications easily and never miss a dose 💊",
               style: TextStyle(
@@ -38,7 +42,10 @@ class LandingPage extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+
             const SizedBox(height: 50),
+
+            // 🔵 Login Button
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -56,11 +63,17 @@ class LandingPage extends StatelessWidget {
                 },
                 child: const Text(
                   "Login",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
+
             const SizedBox(height: 15),
+
+            // ⚪ Create Account Button
             SizedBox(
               width: double.infinity,
               height: 50,

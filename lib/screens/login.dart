@@ -85,19 +85,24 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
+
       appBar: AppBar(
         title: const Text("Login"),
+        centerTitle: true, // 🔥 الحل هنا
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: const Color(0xFF2C7DA0),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.medication, size: 80, color: Color(0xFF2C7DA0)),
+
             const SizedBox(height: 20),
+
             const Text(
               "Welcome Back!",
               style: TextStyle(
@@ -106,12 +111,13 @@ class _LoginPageState extends State<LoginPage> {
                 color: Color(0xFF2C3E50),
               ),
             ),
+
             const SizedBox(height: 40),
 
             // 📧 Email
             TextField(
               controller: emailController,
-              textInputAction: TextInputAction.next, // ✅
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: "Email",
                 prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF2C7DA0)),
@@ -127,12 +133,10 @@ class _LoginPageState extends State<LoginPage> {
             TextField(
               controller: passwordController,
               obscureText: !_isPasswordVisible,
-              textInputAction: TextInputAction.done, // ✅
-
+              textInputAction: TextInputAction.done,
               onSubmitted: (_) {
-                _login(); // ✅ Enter يعمل Login
+                _login();
               },
-
               decoration: InputDecoration(
                 labelText: "Password",
                 prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF2C7DA0)),

@@ -54,26 +54,26 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
 
-    if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text("User not logged in")),
-      );
-    }
-
     String userName =
-        (user.displayName != null && user.displayName!.isNotEmpty)
+        (user?.displayName != null && user!.displayName!.isNotEmpty)
             ? user.displayName!
             : "User";
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
 
-      // ✅ Drawer
+      // 🔥 Drawer محسّن
       drawer: Drawer(
-        child: ListView(
+        child: Column(
           children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Color(0xFF2C7DA0)),
+
+            // 🔵 Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: Color(0xFF2C7DA0),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -95,48 +95,69 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 10),
                   Text(userName,
                       style: const TextStyle(color: Colors.white)),
-                  Text(user.email ?? "",
+                  Text(user?.email ?? "",
                       style: const TextStyle(color: Colors.white70)),
                 ],
               ),
             ),
 
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text("Home"),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_month),
-              title: const Text("Calendar"),
-              onTap: () => Navigator.pushNamed(context, '/calendar'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.bar_chart),
-              title: const Text("Reports"),
-              onTap: () => Navigator.pushNamed(context, '/reports'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_month),
-              title: const Text("History"),
-              onTap: () => Navigator.pushNamed(context, '/history'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.notifications),
-              title: const Text("Notifications"),
-              onTap: () => Navigator.pushNamed(context, '/notifications'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text("Edit Profile"),
-              onTap: () => Navigator.pushNamed(context, '/profile'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text("Logout"),
-              onTap: () async {
-                await FirebaseAuth.instance.signOut();
-              },
+            const SizedBox(height: 10),
+
+            // 📋 Menu
+            Expanded(
+              child: ListView(
+                children: [
+
+                  _drawerItem(Icons.home, "Home", () {
+                    Navigator.pop(context);
+                  }),
+
+                  _drawerItem(Icons.calendar_month, "Calendar", () {
+                    Navigator.pushNamed(context, '/calendar');
+                  }),
+
+                  _drawerItem(Icons.bar_chart, "Reports", () {
+                    Navigator.pushNamed(context, '/reports');
+                  }),
+
+                  _drawerItem(Icons.history, "History", () {
+                    Navigator.pushNamed(context, '/history');
+                  }),
+
+                  _drawerItem(Icons.notifications, "Notifications", () {
+                    Navigator.pushNamed(context, '/notifications');
+                  }),
+
+                  _drawerItem(Icons.person, "Edit Profile", () {
+                    Navigator.pushNamed(context, '/profile');
+                  }),
+
+                  const Divider(),
+
+                  // 🔴 Logout مميز
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text(
+                      "Logout",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onTap: () async {
+                      await FirebaseAuth.instance.signOut();
+
+                      if (!mounted) return;
+
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/login',
+                        (route) => false,
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -187,7 +208,6 @@ class _HomePageState extends State<HomePage> {
 
                 const SizedBox(height: 20),
 
-                // ✅ Summary بدل Stats
                 _buildSummaryCard(takenCount, pendingCount, missedCount),
 
                 const SizedBox(height: 20),
@@ -339,46 +359,54 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _drawerItem(IconData icon, String title, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.grey[800]),
+      title: Text(title),
+      onTap: onTap,
+    );
+  }
+
   Widget _buildWelcomeCard(String userName) {
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 20),
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [Color(0xFF2C7DA0), Color(0xFF3A9BC5)],
-      ),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Ready to stay healthy",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                userName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,        // 👈 الاسم أكبر بكتير
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2C7DA0), Color(0xFF3A9BC5)],
         ),
-        const Icon(Icons.medication, color: Colors.white, size: 40),
-      ],
-    ),
-  );
-}
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Ready to stay healthy",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  userName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.medication, color: Colors.white, size: 40),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSummaryCard(int taken, int pending, int missed) {
     return Container(
@@ -392,7 +420,6 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _miniStat("Taken", taken, Colors.green),
-          // _miniStat("Pending", pending, Colors.orange),
           _miniStat("Missed", missed, Colors.red),
         ],
       ),
