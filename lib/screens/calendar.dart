@@ -14,6 +14,7 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
+  // 🔥 فلترة الأدوية حسب اليوم
   List<QueryDocumentSnapshot> _getMedicinesForDay(
       List<QueryDocumentSnapshot> docs, DateTime day) {
 
@@ -31,12 +32,11 @@ class _CalendarPageState extends State<CalendarPage> {
   Widget build(BuildContext context) {
     return Scaffold(
 
-      // 🔥 نفس لون التطبيق
       appBar: AppBar(
         title: const Text("Calendar"),
         centerTitle: true,
-        backgroundColor: const Color(0xFF2C7DA0), // ✅ اللون الأزرق
-        foregroundColor: Colors.white, // ✅ النص أبيض
+        backgroundColor: const Color(0xFF2C7DA0),
+        foregroundColor: Colors.white,
       ),
 
       body: StreamBuilder<QuerySnapshot>(
@@ -72,6 +72,26 @@ class _CalendarPageState extends State<CalendarPage> {
                     _focusedDay = focusedDay;
                   });
                 },
+
+                // 🔥 أهم إضافة (indicator)
+                eventLoader: (day) {
+                  return docs.where((doc) {
+                    final timestamp = doc['createdAt'] as Timestamp;
+                    final date = timestamp.toDate();
+
+                    return date.year == day.year &&
+                        date.month == day.month &&
+                        date.day == day.day;
+                  }).toList();
+                },
+
+                // 🎨 شكل النقطة
+                calendarStyle: const CalendarStyle(
+                  markerDecoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
               ),
 
               const SizedBox(height: 20),
