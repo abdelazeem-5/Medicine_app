@@ -13,7 +13,6 @@ class _SignUpPageState extends State<SignUpPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // 🔥 Focus
   final emailFocus = FocusNode();
   final passwordFocus = FocusNode();
 
@@ -34,11 +33,9 @@ class _SignUpPageState extends State<SignUpPage> {
           password: passwordController.text.trim(),
         );
 
-        // 🔥 حفظ الاسم
         await userCredential.user!
             .updateDisplayName(nameController.text.trim());
 
-        // 🔥 مهم جدًا عشان الاسم يظهر فورًا
         await FirebaseAuth.instance.currentUser!.reload();
 
         if (!mounted) return;
@@ -47,14 +44,13 @@ class _SignUpPageState extends State<SignUpPage> {
           const SnackBar(content: Text("Account Created Successfully ✅")),
         );
 
-        // 🔥 بدل pop → نروح للهوم مباشرة
         Navigator.pushReplacementNamed(context, '/home');
 
       } on FirebaseAuthException catch (e) {
         String message;
         switch (e.code) {
           case 'email-already-in-use':
-            message = 'Email already in use';
+            message = 'Email already exist';
             break;
           case 'weak-password':
             message = 'Password should be at least 6 characters';
@@ -122,7 +118,6 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
             const SizedBox(height: 40),
 
-            // 🔥 Name
             TextField(
               controller: nameController,
               textInputAction: TextInputAction.next,
@@ -140,7 +135,6 @@ class _SignUpPageState extends State<SignUpPage> {
 
             const SizedBox(height: 20),
 
-            // 🔥 Email
             TextField(
               controller: emailController,
               focusNode: emailFocus,
@@ -159,14 +153,13 @@ class _SignUpPageState extends State<SignUpPage> {
 
             const SizedBox(height: 20),
 
-            // 🔥 Password
             TextField(
               controller: passwordController,
               focusNode: passwordFocus,
               obscureText: !_isPasswordVisible,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) {
-                _signup(); // 🔥 Enter يعمل Signup
+                _signup(); 
               },
               decoration: InputDecoration(
                 labelText: "Password",

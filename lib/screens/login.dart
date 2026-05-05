@@ -88,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
 
       appBar: AppBar(
         title: const Text("Login"),
-        centerTitle: true, // 🔥 الحل هنا
+        centerTitle: true, 
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: const Color(0xFF2C7DA0),
@@ -114,7 +114,6 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 40),
 
-            // 📧 Email
             TextField(
               controller: emailController,
               textInputAction: TextInputAction.next,
@@ -129,7 +128,6 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 20),
 
-            // 🔒 Password
             TextField(
               controller: passwordController,
               obscureText: !_isPasswordVisible,

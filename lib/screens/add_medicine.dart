@@ -36,8 +36,21 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
   String selectedRingtone = 'alarm';
   String frequency = "Daily";
 
-  final List<String> allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  final List<String> allDays = [
+    "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+  ];
   List<String> selectedDays = [];
+
+  // ✅ Map لتحويل اسم اليوم لـ int (DateTime weekday)
+  final Map<String, int> _dayToWeekday = {
+    "Mon": 1,
+    "Tue": 2,
+    "Wed": 3,
+    "Thu": 4,
+    "Fri": 5,
+    "Sat": 6,
+    "Sun": 7,
+  };
 
   @override
   void initState() {
@@ -69,6 +82,14 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
   Future<void> _saveMedicine() async {
     if (_isSaving) return;
 
+    // ✅ تحقق لو Specific Days ومفيش أيام متحددة
+    if (frequency == "Specific Days" && selectedDays.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select at least one day")),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate() && selectedTime != null) {
       setState(() => _isSaving = true);
 
@@ -91,6 +112,7 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
             widget.notificationId ??
             DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
+        // ✅ الغِ الإشعارات القديمة الأول
         await NotificationService.cancelNotification(notificationId);
 
         if (widget.medicineId == null) {
@@ -112,26 +134,55 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
           );
         }
 
-        await NotificationService.scheduleDailyNotification(
-          id: notificationId,
-          title: "Medicine Reminder 💊",
-          body:
-              "${nameController.text.trim()} - ${dosageController.text.trim()}",
-          hour: selectedTime!.hour,
-          minute: selectedTime!.minute,
-          ringtone: selectedRingtone,
-        );
+        // ✅ جدولة الإشعارات حسب الـ frequency
+        if (frequency == "Daily") {
+          // إشعار يومي واحد
+          await NotificationService.scheduleDailyNotification(
+            id: notificationId,
+            title: "Medicine Reminder 💊",
+            body:
+                "${nameController.text.trim()} - ${dosageController.text.trim()}",
+            hour: selectedTime!.hour,
+            minute: selectedTime!.minute,
+            ringtone: selectedRingtone,
+          );
+        } else {
+          // ✅ Specific Days — إشعار لكل يوم محدد بـ id مختلف
+          for (int i = 0; i < selectedDays.length; i++) {
+            final dayName = selectedDays[i];
+            final weekday = _dayToWeekday[dayName]!;
+            final specificId = notificationId + i + 1;
+
+            await NotificationService.cancelNotification(specificId);
+
+            await NotificationService.scheduleWeeklyNotification(
+              id: specificId,
+              title: "Medicine Reminder 💊",
+              body:
+                  "${nameController.text.trim()} - ${dosageController.text.trim()}",
+              hour: selectedTime!.hour,
+              minute: selectedTime!.minute,
+              weekday: weekday,
+              ringtone: selectedRingtone,
+            );
+          }
+        }
 
         if (!mounted) return;
         Navigator.pop(context);
 
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error: $e")),
         );
       }
 
       setState(() => _isSaving = false);
+    } else if (selectedTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a time")),
+      );
     }
   }
 
@@ -147,7 +198,7 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
           selected: isSelected,
           selectedColor: const Color(0xFF2C7DA0),
           labelStyle: TextStyle(
-            color: isSelected ? Colors.white : Colors.black,
+            color: isSelected ? Colors.white : null,
           ),
           onSelected: (_) {
             setState(() {
@@ -162,10 +213,11 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
   }
 
   Widget _buildCard({required Widget child}) {
+    final cardColor = Theme.of(context).cardColor;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: child,
@@ -177,7 +229,7 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
     final isEdit = widget.medicineId != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       appBar: AppBar(
         title: Text(isEdit ? "Edit Medicine" : "Add Medicine"),
@@ -241,7 +293,8 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
                     DropdownButtonFormField<String>(
                       value: frequency,
                       items: const [
-                        DropdownMenuItem(value: "Daily", child: Text("Daily")),
+                        DropdownMenuItem(
+                            value: "Daily", child: Text("Daily")),
                         DropdownMenuItem(
                             value: "Specific Days",
                             child: Text("Specific Days")),
@@ -282,11 +335,15 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
                   ),
                 ),
                 onPressed: _isSaving ? null : _saveMedicine,
-                child: Text(
-                  isEdit ? "Update Medicine" : "Save Medicine",
-                  style: const TextStyle(color: Colors.white),
-                ),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        isEdit ? "Update Medicine" : "Save Medicine",
+                        style: const TextStyle(color: Colors.white),
+                      ),
               ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),

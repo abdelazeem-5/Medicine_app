@@ -1,11 +1,16 @@
 import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:medicine_app/screens/add_medicine.dart';
 import 'package:medicine_app/services/firebase_service.dart';
 import 'package:medicine_app/services/notification_service.dart';
+import 'package:medicine_app/services/theme_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:medicine_app/main.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,10 +21,26 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
+  String? _profileImagePath; 
   @override
   void initState() {
     super.initState();
     _refreshUser();
+    _loadProfileImage();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final path = prefs.getString('profile_image');
+    if (mounted) {
+      setState(() => _profileImagePath = path);
+    }
   }
 
   Future<void> _refreshUser() async {
@@ -45,13 +66,28 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<String?> _getProfileImage() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('profile_image');
+  ImageProvider? _buildImageProvider(String path) {
+    if (kIsWeb) {
+      try {
+        final bytes = base64Decode(path);
+        return MemoryImage(bytes);
+      } catch (_) {
+        return null;
+      }
+    } else {
+      final file = File(path);
+      if (file.existsSync()) return FileImage(file);
+      return null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final bgColor = theme.scaffoldBackgroundColor;
+
     User? user = FirebaseAuth.instance.currentUser;
 
     String userName =
@@ -60,14 +96,12 @@ class _HomePageState extends State<HomePage> {
             : "User";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: bgColor,
 
-      // 🔥 Drawer محسّن
       drawer: Drawer(
         child: Column(
           children: [
 
-            // 🔵 Header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -77,14 +111,18 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FutureBuilder<String?>(
-                    future: _getProfileImage(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data != null) {
-                        return CircleAvatar(
-                          radius: 30,
-                          backgroundImage: FileImage(File(snapshot.data!)),
-                        );
+
+                  Builder(
+                    builder: (context) {
+                      if (_profileImagePath != null) {
+                        final provider =
+                            _buildImageProvider(_profileImagePath!);
+                        if (provider != null) {
+                          return CircleAvatar(
+                            radius: 30,
+                            backgroundImage: provider,
+                          );
+                        }
                       }
                       return const CircleAvatar(
                         radius: 30,
@@ -92,6 +130,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
+
                   const SizedBox(height: 10),
                   Text(userName,
                       style: const TextStyle(color: Colors.white)),
@@ -103,7 +142,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 10),
 
-            // 📋 Menu
             Expanded(
               child: ListView(
                 children: [
@@ -124,17 +162,18 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushNamed(context, '/history');
                   }),
 
-                  _drawerItem(Icons.notifications, "Notifications", () {
-                    Navigator.pushNamed(context, '/notifications');
+                  _drawerItem(Icons.settings, "Settings", () {
+                    Navigator.pushNamed(context, '/settings');
                   }),
 
-                  _drawerItem(Icons.person, "Edit Profile", () {
-                    Navigator.pushNamed(context, '/profile');
-                  }),
+                _drawerItem(Icons.person, "Edit Profile", () {
+                  Navigator.pushNamed(context, '/profile').then((_) {
+                    _loadProfileImage();
+                  });
+                }),
 
                   const Divider(),
 
-                  // 🔴 Logout مميز
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),
                     title: const Text(
@@ -146,9 +185,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     onTap: () async {
                       await FirebaseAuth.instance.signOut();
-
                       if (!mounted) return;
-
                       Navigator.pushNamedAndRemoveUntil(
                         context,
                         '/login',
@@ -159,6 +196,59 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
+
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: [
+                  const Text(
+                    "Theme",
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+
+                      GestureDetector(
+                        onTap: () async {
+                          await ThemeService.setTheme(ThemeMode.light);
+                          if (!mounted) return;
+                          MyApp.of(context)?.changeTheme(ThemeMode.light);
+                          Navigator.pop(context);
+                        },
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.orange[100],
+                          child: const Text("☀️",
+                              style: TextStyle(fontSize: 20)),
+                        ),
+                      ),
+
+                      const SizedBox(width: 20),
+
+                      GestureDetector(
+                        onTap: () async {
+                          await ThemeService.setTheme(ThemeMode.dark);
+                          if (!mounted) return;
+                          MyApp.of(context)?.changeTheme(ThemeMode.dark);
+                          Navigator.pop(context);
+                        },
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.indigo[100],
+                          child: const Text("🌙",
+                              style: TextStyle(fontSize: 20)),
+                        ),
+                      ),
+
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
           ],
         ),
       ),
@@ -208,18 +298,21 @@ class _HomePageState extends State<HomePage> {
 
                 const SizedBox(height: 20),
 
-                _buildSummaryCard(takenCount, pendingCount, missedCount),
+                _buildSummaryCard(context, takenCount, pendingCount, missedCount),
 
                 const SizedBox(height: 20),
 
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       "💊 Today's Medicines",
                       style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
                     ),
                   ),
                 ),
@@ -231,17 +324,24 @@ class _HomePageState extends State<HomePage> {
                         margin: const EdgeInsets.all(20),
                         padding: const EdgeInsets.all(40),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: cardColor,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Column(
+                        child: Column(
                           children: [
                             Icon(Icons.medication,
-                                size: 60, color: Colors.grey),
-                            SizedBox(height: 10),
-                            Text("No medicines yet"),
-                            SizedBox(height: 5),
-                            Text("Tap + to add"),
+                                size: 60,
+                                color: theme.iconTheme.color
+                                    ?.withOpacity(0.4)),
+                            const SizedBox(height: 10),
+                            Text("No medicines yet",
+                                style: TextStyle(
+                                    color:
+                                        theme.textTheme.bodyMedium?.color)),
+                            const SizedBox(height: 5),
+                            Text("Tap + to add",
+                                style:
+                                    TextStyle(color: theme.hintColor)),
                           ],
                         ),
                       )
@@ -264,18 +364,33 @@ class _HomePageState extends State<HomePage> {
                           bool isMissed =
                               !isTaken && medicineTime.isBefore(now);
 
+                          Color cardBgColor;
+                          if (isTaken) {
+                            cardBgColor = isDark
+                                ? Colors.green.shade900.withOpacity(0.4)
+                                : Colors.green.shade50;
+                          } else if (isMissed) {
+                            cardBgColor = isDark
+                                ? Colors.red.shade900.withOpacity(0.4)
+                                : Colors.red.shade50;
+                          } else {
+                            cardBgColor = cardColor;
+                          }
+
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12),
-                            color: isTaken
-                                ? Colors.green[50]
-                                : isMissed
-                                    ? Colors.red[50]
-                                    : Colors.white,
+                            color: cardBgColor,
                             child: ListTile(
-                              leading: const Icon(Icons.medication),
-                              title: Text(data['name'] ?? ""),
+                              leading: Icon(Icons.medication,
+                                  color: theme.iconTheme.color),
+                              title: Text(data['name'] ?? "",
+                                  style: TextStyle(
+                                      color: theme
+                                          .textTheme.bodyLarge?.color)),
                               subtitle: Text(
                                 "${data['dosage']} • ${TimeOfDay.fromDateTime(medicineTime).format(context)}",
+                                style:
+                                    TextStyle(color: theme.hintColor),
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -307,13 +422,15 @@ class _HomePageState extends State<HomePage> {
                                           builder: (_) => AddMedicinePage(
                                             medicineId: docId,
                                             initialName: data['name'],
-                                            initialDosage: data['dosage'],
+                                            initialDosage:
+                                                data['dosage'],
                                             initialTime:
                                                 parseTime(data['time']),
                                             notificationId:
                                                 data['notificationId'],
                                             initialRingtone:
-                                                data['ringtone'] ?? 'alarm',
+                                                data['ringtone'] ??
+                                                    'alarm',
                                           ),
                                         ),
                                       );
@@ -361,7 +478,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _drawerItem(IconData icon, String title, VoidCallback onTap) {
     return ListTile(
-      leading: Icon(icon, color: Colors.grey[800]),
+      leading: Icon(icon, color: Colors.grey[600]),
       title: Text(title),
       onTap: onTap,
     );
@@ -385,10 +502,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 const Text(
                   "Ready to stay healthy",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -408,13 +522,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSummaryCard(int taken, int pending, int missed) {
+  Widget _buildSummaryCard(
+      BuildContext context, int taken, int pending, int missed) {
+    final cardColor = Theme.of(context).cardColor;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -446,3 +569,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+

@@ -14,7 +14,6 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  // 🔥 فلترة الأدوية حسب اليوم
   List<QueryDocumentSnapshot> _getMedicinesForDay(
       List<QueryDocumentSnapshot> docs, DateTime day) {
 
@@ -56,7 +55,6 @@ class _CalendarPageState extends State<CalendarPage> {
           return Column(
             children: [
 
-              // 📅 Calendar
               TableCalendar(
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2030, 12, 31),
@@ -73,7 +71,6 @@ class _CalendarPageState extends State<CalendarPage> {
                   });
                 },
 
-                // 🔥 أهم إضافة (indicator)
                 eventLoader: (day) {
                   return docs.where((doc) {
                     final timestamp = doc['createdAt'] as Timestamp;
@@ -85,7 +82,6 @@ class _CalendarPageState extends State<CalendarPage> {
                   }).toList();
                 },
 
-                // 🎨 شكل النقطة
                 calendarStyle: const CalendarStyle(
                   markerDecoration: BoxDecoration(
                     color: Colors.red,
@@ -96,7 +92,6 @@ class _CalendarPageState extends State<CalendarPage> {
 
               const SizedBox(height: 20),
 
-              // 💊 Medicines
               Expanded(
                 child: _selectedDay == null
                     ? const Center(child: Text("Select a day"))

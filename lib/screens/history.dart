@@ -5,7 +5,6 @@ import 'package:medicine_app/services/firebase_service.dart';
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
 
-  // 🔥 format time
   String _formatTime(String timeStr, BuildContext context) {
     try {
       final dateTime = DateTime.parse(timeStr);
@@ -16,7 +15,6 @@ class HistoryPage extends StatelessWidget {
     }
   }
 
-  // 🔥 format date (2026-04-21)
   String _formatDate(String timeStr) {
     try {
       final date = DateTime.parse(timeStr);
@@ -26,7 +24,6 @@ class HistoryPage extends StatelessWidget {
     }
   }
 
-  // 🔥 Today / Yesterday
   String _getDayLabel(String timeStr) {
     try {
       final date = DateTime.parse(timeStr);
@@ -110,7 +107,6 @@ class HistoryPage extends StatelessWidget {
                   child: Row(
                     children: [
 
-                      // icon
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
@@ -122,7 +118,6 @@ class HistoryPage extends StatelessWidget {
 
                       const SizedBox(width: 15),
 
-                      // content
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,7 +132,6 @@ class HistoryPage extends StatelessWidget {
 
                             const SizedBox(height: 6),
 
-                            // 🔥 التاريخ
                             Text(
                               date,
                               style: const TextStyle(
@@ -148,7 +142,6 @@ class HistoryPage extends StatelessWidget {
 
                             const SizedBox(height: 4),
 
-                            // 🔥 الوقت + Today
                             Text(
                               label.isNotEmpty
                                   ? "$time • $label"
@@ -162,7 +155,6 @@ class HistoryPage extends StatelessWidget {
                         ),
                       ),
 
-                      // delete
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () {

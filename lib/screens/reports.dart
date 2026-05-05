@@ -52,8 +52,7 @@ class ReportsPage extends StatelessWidget {
           DateTime now = DateTime.now();
 
           for (var doc in docs) {
-            DateTime time = parseTime(doc['time']); // ✅ FIX
-
+            DateTime time = parseTime(doc['time']); 
             if (doc['taken'] == true) {
               taken++;
             } else if (time.isBefore(now)) {
@@ -65,7 +64,6 @@ class ReportsPage extends StatelessWidget {
 
           double adherence = total == 0 ? 0 : taken / total;
 
-          // 🔥 لون حسب الأداء
           Color progressColor;
           if (adherence >= 0.7) {
             progressColor = Colors.green;
@@ -80,7 +78,6 @@ class ReportsPage extends StatelessWidget {
             child: Column(
               children: [
 
-                // 📊 Adherence Card
                 Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -99,13 +96,13 @@ class ReportsPage extends StatelessWidget {
                         CircularProgressIndicator(
                           value: adherence,
                           strokeWidth: 8,
-                          color: progressColor, // 🔥 متغير
+                          color: progressColor, 
                         ),
 
                         const SizedBox(height: 10),
 
                         Text(
-                          "${(adherence * 100).toStringAsFixed(1)}%", // 🔥 أدق
+                          "${(adherence * 100).toStringAsFixed(1)}%", 
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -118,7 +115,6 @@ class ReportsPage extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // 📈 Stats Row
                 Row(
                   children: [
                     Expanded(
@@ -163,7 +159,6 @@ class ReportsPage extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-                // 📊 Progress Bar
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -176,7 +171,7 @@ class ReportsPage extends StatelessWidget {
                     LinearProgressIndicator(
                       value: adherence,
                       minHeight: 10,
-                      color: progressColor, // 🔥 نفس اللون
+                      color: progressColor, 
                       backgroundColor: Colors.grey.shade300,
                     ),
                   ],

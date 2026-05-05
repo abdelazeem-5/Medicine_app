@@ -45,7 +45,6 @@ class WelcomePage extends StatelessWidget {
 
             const SizedBox(height: 50),
 
-            // 🔵 Login Button
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -73,7 +72,6 @@ class WelcomePage extends StatelessWidget {
 
             const SizedBox(height: 15),
 
-            // ⚪ Create Account Button
             SizedBox(
               width: double.infinity,
               height: 50,

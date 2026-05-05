@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -19,48 +22,74 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
 
-  File? _selectedImage;
+  File? _selectedImageFile;       
+  Uint8List? _selectedImageBytes; 
 
   @override
   void initState() {
     super.initState();
-
     User? user = FirebaseAuth.instance.currentUser;
     nameController.text = user?.displayName ?? "";
-
-    _loadImage(); // 🔥 تحميل الصورة
+    _loadImage();
   }
 
-  // 🔥 تحميل الصورة من الجهاز
   Future<void> _loadImage() async {
     final prefs = await SharedPreferences.getInstance();
-    final path = prefs.getString('profile_image');
+    final saved = prefs.getString('profile_image');
+    if (saved == null) return;
 
-    if (path != null) {
-      setState(() {
-        _selectedImage = File(path);
-      });
+    if (kIsWeb) {
+      try {
+        final bytes = base64Decode(saved);
+        setState(() => _selectedImageBytes = bytes);
+      } catch (_) {}
+    } else {
+      final file = File(saved);
+      if (file.existsSync()) {
+        setState(() => _selectedImageFile = file);
+      }
     }
   }
 
-  // 🔥 حفظ الصورة
-  Future<void> _saveImage(String path) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profile_image', path);
-  }
-
-  // 📸 اختيار صورة
   Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 80,
+    );
 
-    if (picked != null) {
-      setState(() {
-        _selectedImage = File(picked.path);
-      });
+    if (picked == null) return;
 
-      await _saveImage(picked.path); // 🔥 حفظ الصورة
+    final prefs = await SharedPreferences.getInstance();
+
+    if (kIsWeb) {
+      final bytes = await picked.readAsBytes();
+      final encoded = base64Encode(bytes);
+      await prefs.setString('profile_image', encoded);
+      setState(() => _selectedImageBytes = bytes);
+    } else {
+      final appDir = await getApplicationDocumentsDirectory();
+      final savedImage =
+          await File(picked.path).copy('${appDir.path}/${picked.name}');
+      await prefs.setString('profile_image', savedImage.path);
+      setState(() => _selectedImageFile = savedImage);
     }
   }
+
+  ImageProvider? get _imageProvider {
+    if (kIsWeb && _selectedImageBytes != null) {
+      return MemoryImage(_selectedImageBytes!);
+    }
+    if (!kIsWeb && _selectedImageFile != null) {
+      return FileImage(_selectedImageFile!);
+    }
+    return null;
+  }
+
+  bool get _hasImage =>
+      (kIsWeb && _selectedImageBytes != null) ||
+      (!kIsWeb && _selectedImageFile != null);
 
   Future<void> _updateProfile() async {
     setState(() => _isLoading = true);
@@ -88,22 +117,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
     } on FirebaseAuthException catch (e) {
       String message;
-
       if (e.code == 'requires-recent-login') {
         message = 'Please log in again to change password';
       } else {
         message = e.message ?? "Update failed";
       }
-
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
-
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
@@ -117,29 +141,30 @@ class _ProfilePageState extends State<ProfilePage> {
     User? user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       appBar: AppBar(
         title: const Text("Edit Profile"),
         backgroundColor: const Color(0xFF2C7DA0),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
+
             const SizedBox(height: 20),
 
-            // 🔥 صورة البروفايل
             GestureDetector(
               onTap: _pickImage,
               child: CircleAvatar(
                 radius: 60,
                 backgroundColor:
                     const Color(0xFF2C7DA0).withOpacity(0.1),
-                backgroundImage:
-                    _selectedImage != null ? FileImage(_selectedImage!) : null,
-                child: _selectedImage == null
+                backgroundImage: _imageProvider,
+                child: !_hasImage
                     ? const Icon(Icons.camera_alt,
                         size: 40, color: Color(0xFF2C7DA0))
                     : null,
@@ -147,17 +172,20 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
             const SizedBox(height: 10),
-            const Text(
+
+            Text(
               "Tap to change photo",
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: Theme.of(context).hintColor),
             ),
 
             const SizedBox(height: 16),
 
             Text(
               user?.email ?? "No Email",
-              style: const TextStyle(
-                  fontSize: 16, color: Color(0xFF5D6D7E)),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).hintColor,
+              ),
             ),
 
             const SizedBox(height: 30),
@@ -166,8 +194,7 @@ class _ProfilePageState extends State<ProfilePage> {
               controller: nameController,
               decoration: InputDecoration(
                 labelText: "Full Name",
-                prefixIcon: const Icon(Icons.person_outline,
-                    color: Color(0xFF2C7DA0)),
+                prefixIcon: const Icon(Icons.person_outline),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -181,8 +208,7 @@ class _ProfilePageState extends State<ProfilePage> {
               obscureText: !_isPasswordVisible,
               decoration: InputDecoration(
                 labelText: "New Password",
-                prefixIcon: const Icon(Icons.lock_outline,
-                    color: Color(0xFF2C7DA0)),
+                prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _isPasswordVisible
@@ -190,9 +216,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         : Icons.visibility_off,
                   ),
                   onPressed: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
+                    setState(() => _isPasswordVisible = !_isPasswordVisible);
                   },
                 ),
                 border: OutlineInputBorder(
@@ -213,7 +237,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 onPressed: _isLoading ? null : _updateProfile,
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Save Changes"),
+                    : const Text("Save Changes",
+                        style: TextStyle(color: Colors.white)),
               ),
             ),
           ],
