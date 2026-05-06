@@ -11,6 +11,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:medicine_app/main.dart';
+import 'package:medicine_app/services/call_service.dart';
+import 'package:medicine_app/services/share_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -174,6 +176,7 @@ class _HomePageState extends State<HomePage> {
                 //     _loadProfileImage();
                 //   });
                 // }),
+                
 
                 _drawerItem(Icons.person, "Edit Profile", () async {
                 await Navigator.pushNamed(context, '/profile');
@@ -185,6 +188,9 @@ class _HomePageState extends State<HomePage> {
                 }
                 }),
 
+                _drawerItem(Icons.call, "Emergency Call", () {
+                  CallService.makeEmergencyCall();
+                }),
                   const Divider(),
 
                   ListTile(
@@ -405,70 +411,83 @@ class _HomePageState extends State<HomePage> {
                                 style:
                                     TextStyle(color: theme.hintColor),
                               ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
+trailing: Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
 
-                                  IconButton(
-                                    icon: Icon(
-                                      isTaken
-                                          ? Icons.check_circle
-                                          : Icons.check_circle_outline,
-                                      color: isTaken
-                                          ? Colors.green
-                                          : Colors.grey,
-                                    ),
-                                    onPressed: () {
-                                      FirebaseService()
-                                          .updateMedicineStatus(
-                                              docId, !isTaken);
-                                    },
-                                  ),
+    IconButton(
+      icon: Icon(
+        isTaken
+            ? Icons.check_circle
+            : Icons.check_circle_outline,
+        color: isTaken
+            ? Colors.green
+            : Colors.grey,
+      ),
+      onPressed: () {
+        FirebaseService()
+            .updateMedicineStatus(
+                docId, !isTaken);
+      },
+    ),
 
-                                  IconButton(
-                                    icon: const Icon(Icons.edit,
-                                        color: Colors.blue),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => AddMedicinePage(
-                                            medicineId: docId,
-                                            initialName: data['name'],
-                                            initialDosage:
-                                                data['dosage'],
-                                            initialTime:
-                                                parseTime(data['time']),
-                                            notificationId:
-                                                data['notificationId'],
-                                            initialRingtone:
-                                                data['ringtone'] ??
-                                                    'alarm',
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
+    IconButton(
+      icon: const Icon(Icons.edit,
+          color: Colors.blue),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AddMedicinePage(
+              medicineId: docId,
+              initialName: data['name'],
+              initialDosage:
+                  data['dosage'],
+              initialTime:
+                  parseTime(data['time']),
+              notificationId:
+                  data['notificationId'],
+              initialRingtone:
+                  data['ringtone'] ??
+                      'alarm',
+            ),
+          ),
+        );
+      },
+    ),
 
-                                  IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.red),
-                                    onPressed: () async {
-                                      final int? notificationId =
-                                          data['notificationId'];
+    IconButton(
+      icon: const Icon(Icons.share,
+          color: Colors.teal),
+      onPressed: () {
 
-                                      if (notificationId != null) {
-                                        await NotificationService
-                                            .cancelNotification(
-                                                notificationId);
-                                      }
+        ShareService.shareReminder(
+          medicineName: data['name'],
+          dosage: data['dosage'],
+          time: data['time'],
+        );
+      },
+    ),
 
-                                      await FirebaseService()
-                                          .deleteMedicine(docId);
-                                    },
-                                  ),
-                                ],
-                              ),
+    IconButton(
+      icon: const Icon(Icons.delete,
+          color: Colors.red),
+      onPressed: () async {
+        final int? notificationId =
+            data['notificationId'];
+
+        if (notificationId != null) {
+          await NotificationService
+              .cancelNotification(
+                  notificationId);
+        }
+
+        await FirebaseService()
+            .deleteMedicine(docId);
+      },
+    ),
+  ],
+),
                             ),
                           );
                         },
