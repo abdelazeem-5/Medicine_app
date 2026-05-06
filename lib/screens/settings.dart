@@ -87,8 +87,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
         title: const Text("Settings"),
@@ -100,9 +103,13 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(20),
         children: [
 
-          const Text(
+          Text(
             "Notifications",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.bodyLarge?.color,
+            ),
           ),
 
           const SizedBox(height: 10),
@@ -110,16 +117,23 @@ class _SettingsPageState extends State<SettingsPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               children: [
-                const Icon(Icons.notifications),
+                Icon(Icons.notifications,
+                    color: theme.iconTheme.color),
+
                 const SizedBox(width: 10),
 
-                const Expanded(
-                  child: Text("Enable Notifications"),
+                Expanded(
+                  child: Text(
+                    "Enable Notifications",
+                    style: TextStyle(
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
                 ),
 
                 Switch(
@@ -132,17 +146,27 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 30),
 
-          const Text(
+          Text(
             "Snooze Duration",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.bodyLarge?.color,
+            ),
           ),
 
           DropdownButton<int>(
             value: snoozeDuration,
-            items: [5, 10, 15, 30]
+            dropdownColor: theme.cardColor, 
+            items: [1 ,3, 5, 10]
                 .map((e) => DropdownMenuItem(
                       value: e,
-                      child: Text("$e minutes"),
+                      child: Text(
+                        "$e minutes",
+                        style: TextStyle(
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
                     ))
                 .toList(),
             onChanged: (v) async {
@@ -153,17 +177,27 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 20),
 
-          const Text(
+          Text(
             "Max Snooze Count",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.bodyLarge?.color,
+            ),
           ),
 
           DropdownButton<int>(
             value: snoozeCount,
+            dropdownColor: theme.cardColor,
             items: [1, 2, 3, 4, 5]
                 .map((e) => DropdownMenuItem(
                       value: e,
-                      child: Text("$e times"),
+                      child: Text(
+                        "$e times",
+                        style: TextStyle(
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
                     ))
                 .toList(),
             onChanged: (v) async {

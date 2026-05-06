@@ -51,13 +51,11 @@ class _MyAppState extends State<MyApp> {
     _loadTheme();
   }
 
-  // 🔥 Load saved theme
   Future<void> _loadTheme() async {
     final mode = await ThemeService.getTheme();
     setState(() => _themeMode = mode);
   }
 
-  // 🔥 Change + save theme
   Future<void> changeTheme(ThemeMode mode) async {
     await ThemeService.setTheme(mode);
     setState(() => _themeMode = mode);
@@ -89,7 +87,6 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       title: 'Medicine Reminder',
 
-      // 🔥 Global theme control
       themeMode: _themeMode,
 
       theme: ThemeData(

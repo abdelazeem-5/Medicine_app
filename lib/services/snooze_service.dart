@@ -9,10 +9,6 @@ class SnoozeService {
   static const int _defaultMinutes = 10;
   static const int _defaultMaxCount = 3;
 
-  // ====================
-  // ⏱️ Duration
-  // ====================
-
   static Future<int> getDuration() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_durationKey) ?? _defaultMinutes;
@@ -23,9 +19,6 @@ class SnoozeService {
     await prefs.setInt(_durationKey, minutes);
   }
 
-  // ====================
-  // 🔢 Max Count
-  // ====================
 
   static Future<int> getMaxCount() async {
     final prefs = await SharedPreferences.getInstance();
@@ -40,9 +33,6 @@ class SnoozeService {
     await prefs.setInt(_maxCountKey, count);
   }
 
-  // ====================
-  // 📊 Current Count
-  // ====================
 
   static Future<int> getCurrentCount(int id) async {
     final prefs = await SharedPreferences.getInstance();
@@ -51,8 +41,13 @@ class SnoozeService {
 
   static Future<void> incrementCount(int id) async {
     final prefs = await SharedPreferences.getInstance();
+
     int current = prefs.getInt('snooze_count_$id') ?? 0;
-    await prefs.setInt('snooze_count_$id', current + 1);
+
+    await prefs.setInt(
+      'snooze_count_$id',
+      current + 1,
+    );
   }
 
   static Future<void> resetCount(int id) async {
@@ -60,9 +55,6 @@ class SnoozeService {
     await prefs.remove('snooze_count_$id');
   }
 
-  // ====================
-  // 🔔 Snooze Logic (FIXED)
-  // ====================
 
   static Future<void> snoozeNotification({
     required FlutterLocalNotificationsPlugin notifications,
@@ -80,23 +72,42 @@ class SnoozeService {
     }
 
     final tz.TZDateTime newTime =
-        tz.TZDateTime.now(tz.local).add(Duration(minutes: minutes));
+        tz.TZDateTime.now(tz.local).add(
+      Duration(minutes: minutes),
+    );
 
-    print("⏳ Snoozing → after $minutes min (${currentCount + 1}/$maxCount)");
+    print(
+      "⏳ Snoozing → after $minutes min (${currentCount + 1}/$maxCount)",
+    );
 
     final androidDetails = AndroidNotificationDetails(
-      'medicine_channel',
-      'Medicine Reminder',
+      'medicine_alarm',
+      'Medicine Alarm',
+
       importance: Importance.max,
       priority: Priority.high,
-      playSound: true,
 
-      // 🔥 رجعنا actions
+      sound: RawResourceAndroidNotificationSound('alarm'),
+
+      playSound: true,
+      enableVibration: true,
+      enableLights: true,
+
+      fullScreenIntent: true,
+      visibility: NotificationVisibility.public,
+      category: AndroidNotificationCategory.alarm,
+
       actions: <AndroidNotificationAction>[
-        AndroidNotificationAction('taken', 'Taken ✅',
-            showsUserInterface: true),
-        AndroidNotificationAction('skip', 'Skip ❌'),
-        AndroidNotificationAction('snooze', 'Snooze ⏳'),
+        AndroidNotificationAction(
+          'taken',
+          'Taken ✅',
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          'snooze',
+          'Snooze ⏳',
+          showsUserInterface: true,
+        ),
       ],
     );
 
@@ -105,12 +116,17 @@ class SnoozeService {
       title,
       body,
       newTime,
-      NotificationDetails(android: androidDetails),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      NotificationDetails(
+        android: androidDetails,
+      ),
+      androidScheduleMode:
+          AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
 
     await incrementCount(id);
+
+    print("✅ Snooze scheduled successfully");
   }
 }

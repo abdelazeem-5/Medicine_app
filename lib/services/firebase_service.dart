@@ -5,8 +5,6 @@ class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // ================= AUTH =================
-
   Future<void> signUp(String email, String password) async {
     await _auth.createUserWithEmailAndPassword(
       email: email,
@@ -27,9 +25,6 @@ class FirebaseService {
     await _auth.signOut();
   }
 
-  // ================= DATABASE =================
-
-  /// ✅ ADD MEDICINE
   Future<void> addMedicine({
     required String name,
     required String dosage,
@@ -55,7 +50,6 @@ class FirebaseService {
     });
   }
 
-  /// ✅ GET MEDICINES (Live Stream)
   Stream<QuerySnapshot> getMedicines() {
     final user = _auth.currentUser;
 
@@ -66,23 +60,20 @@ class FirebaseService {
     return _db
         .collection('medicines')
         .where('userId', isEqualTo: user.uid)
-        .orderBy('createdAt', descending: true) // 🔥 ترتيب
+        .orderBy('createdAt', descending: true)
         .snapshots();
   }
 
-  /// ✅ DELETE MEDICINE
   Future<void> deleteMedicine(String id) async {
     await _db.collection('medicines').doc(id).delete();
   }
 
-  /// ✅ UPDATE STATUS (Taken / Not Taken)
   Future<void> updateMedicineStatus(String id, bool taken) async {
     await _db.collection('medicines').doc(id).update({
       'taken': taken,
     });
   }
 
-  /// ✅ UPDATE MEDICINE (Edit Screen)
   Future<void> updateMedicine({
     required String id,
     required String name,
@@ -98,5 +89,16 @@ class FirebaseService {
       'notificationId': notificationId,
       'ringtone': ringtone,
     });
+  }
+
+  Future<void> markAsTakenByNotification(int notificationId) async {
+    final snapshot = await _db
+        .collection('medicines')
+        .where('notificationId', isEqualTo: notificationId)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      await doc.reference.update({'taken': true});
+    }
   }
 }

@@ -35,7 +35,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadImage() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString('profile_image');
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    final key = 'profile_image_$uid';
+    final saved = prefs.getString(key);
     if (saved == null) return;
 
     if (kIsWeb) {
@@ -66,14 +68,22 @@ class _ProfilePageState extends State<ProfilePage> {
     if (kIsWeb) {
       final bytes = await picked.readAsBytes();
       final encoded = base64Encode(bytes);
-      await prefs.setString('profile_image', encoded);
+
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+      final key = 'profile_image_$uid';
+      await prefs.setString(key, encoded);
+
       setState(() => _selectedImageBytes = bytes);
     } else {
       final appDir = await getApplicationDocumentsDirectory();
       final savedImage =
           await File(picked.path).copy('${appDir.path}/${picked.name}');
-      await prefs.setString('profile_image', savedImage.path);
+
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+      final key = 'profile_image_$uid';
+      await prefs.setString(key, savedImage.path);
       setState(() => _selectedImageFile = savedImage);
+
     }
   }
 

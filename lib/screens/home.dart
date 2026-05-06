@@ -37,7 +37,10 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadProfileImage() async {
     final prefs = await SharedPreferences.getInstance();
-    final path = prefs.getString('profile_image');
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    final key = 'profile_image_$uid';
+    final path = prefs.getString(key);
+
     if (mounted) {
       setState(() => _profileImagePath = path);
     }
@@ -166,10 +169,20 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushNamed(context, '/settings');
                   }),
 
-                _drawerItem(Icons.person, "Edit Profile", () {
-                  Navigator.pushNamed(context, '/profile').then((_) {
-                    _loadProfileImage();
-                  });
+                // _drawerItem(Icons.person, "Edit Profile", () {
+                //   Navigator.pushNamed(context, '/profile').then((_) {
+                //     _loadProfileImage();
+                //   });
+                // }),
+
+                _drawerItem(Icons.person, "Edit Profile", () async {
+                await Navigator.pushNamed(context, '/profile');
+
+                await _loadProfileImage();
+
+                if (mounted) {
+                  setState(() {});
+                }
                 }),
 
                   const Divider(),
@@ -569,4 +582,5 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
 

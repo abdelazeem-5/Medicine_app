@@ -45,8 +45,10 @@ class HistoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
         title: const Text("History"),
@@ -69,17 +71,25 @@ class HistoryPage extends StatelessWidget {
               docs.where((doc) => doc['taken'] == true).toList();
 
           if (takenDocs.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history, size: 60, color: Colors.grey),
-                  SizedBox(height: 10),
-                  Text("No history yet", style: TextStyle(fontSize: 18)),
-                  SizedBox(height: 5),
+                  Icon(Icons.history,
+                      size: 60,
+                      color: theme.iconTheme.color?.withOpacity(0.4)),
+                  const SizedBox(height: 10),
+                  Text(
+                    "No history yet",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
                   Text(
                     "Take your medicines to see history",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: theme.hintColor),
                   ),
                 ],
               ),
@@ -99,7 +109,7 @@ class HistoryPage extends StatelessWidget {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
@@ -125,8 +135,9 @@ class HistoryPage extends StatelessWidget {
 
                             Text(
                               data['name'],
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
+                                color: theme.textTheme.bodyLarge?.color,
                               ),
                             ),
 
@@ -134,9 +145,9 @@ class HistoryPage extends StatelessWidget {
 
                             Text(
                               date,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: theme.hintColor,
                               ),
                             ),
 
@@ -146,9 +157,9 @@ class HistoryPage extends StatelessWidget {
                               label.isNotEmpty
                                   ? "$time • $label"
                                   : time,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.grey,
+                                color: theme.hintColor,
                               ),
                             ),
                           ],

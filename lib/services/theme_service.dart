@@ -4,9 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ThemeService {
   static const String _key = 'theme_mode';
 
-  // 0 = system, 1 = light, 2 = dark
 
-  /// 🔹 Get Theme
   static Future<ThemeMode> getTheme() async {
     final prefs = await SharedPreferences.getInstance();
     final value = prefs.getInt(_key) ?? 0;
@@ -21,7 +19,6 @@ class ThemeService {
     }
   }
 
-  /// 🔹 Set Theme
   static Future<void> setTheme(ThemeMode mode) async {
     final prefs = await SharedPreferences.getInstance();
 

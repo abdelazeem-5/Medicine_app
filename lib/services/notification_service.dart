@@ -4,15 +4,14 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:medicine_app/services/snooze_service.dart';
-
+import 'package:medicine_app/services/firebase_service.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
-  static const String channelId = 'medicine_channel';
+  static const String channelId = 'medicine_channel_3';
 
-  // 🔥 INIT
   static Future<void> init() async {
     if (kIsWeb) return;
 
@@ -36,26 +35,11 @@ class NotificationService {
         if (id == -1) return;
 
         if (actionId == 'taken') {
-          print("✅ Taken clicked");
-          await SnoozeService.resetCount(id);
-        }
-
-        if (actionId == 'skip') {
-          print("❌ Skipped");
+          await FirebaseService().markAsTakenByNotification(id);
           await SnoozeService.resetCount(id);
         }
 
         if (actionId == 'snooze') {
-          final current = await SnoozeService.getCurrentCount(id);
-          final max = await SnoozeService.getMaxCount();
-
-          if (current >= max) {
-            print("🚫 Snooze limit reached ($max)");
-            return;
-          }
-
-          print("⏳ Snoozing... (${current + 1}/$max)");
-
           await SnoozeService.snoozeNotification(
             notifications: _notifications,
             id: id,
@@ -63,33 +47,61 @@ class NotificationService {
             body: "Take your medicine",
           );
         }
-
-        if (actionId == null) {
-          print("📱 Notification tapped");
-        }
       },
-    );
-
-    // ✅ Notification Channel
-    const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      channelId,
-      'Medicine Reminder',
-      description: 'Reminders for taking medicine on time',
-      importance: Importance.max,
-      playSound: true,
-      enableVibration: true,
-      enableLights: true,
-      showBadge: true,
     );
 
     final android = _notifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    await android?.createNotificationChannel(channel);
+    final channels = [
+      AndroidNotificationChannel(
+        'medicine_alarm',
+        'Medicine Alarm',
+        description: 'Alarm ringtone notifications',
+        importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('alarm'),
+      ),
+      AndroidNotificationChannel(
+        'medicine_bell',
+        'Medicine Bell',
+        description: 'Bell ringtone notifications',
+        importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('bell'),
+      ),
+      AndroidNotificationChannel(
+        'medicine_soft',
+        'Medicine Soft',
+        description: 'Soft ringtone notifications',
+        importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('soft'),
+      ),
+      AndroidNotificationChannel(
+        'medicine_tone',
+        'Medicine Tone',
+        description: 'Tone ringtone notifications',
+        importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('tone'),
+      ),
+      AndroidNotificationChannel(
+        'medicine_tonee',
+        'Medicine Tonee',
+        description: 'Tonee ringtone notifications',
+        importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('tonee'),
+      ),
+    ];
+
+    for (final channel in channels) {
+      await android?.createNotificationChannel(channel);
+    }
   }
 
-  // 🔥 PERMISSION
   static Future<void> requestPermission() async {
     if (kIsWeb) return;
 
@@ -104,7 +116,6 @@ class NotificationService {
     }
   }
 
-  // 🔥 CANCEL
   static Future<void> cancelNotification(int id) async {
     if (kIsWeb) return;
     await _notifications.cancel(id);
@@ -115,30 +126,34 @@ class NotificationService {
     await _notifications.cancelAll();
   }
 
-  // 🎵 ringtone + actions
   static AndroidNotificationDetails _buildAndroidDetails(String ringtone) {
     final soundMap = {
       'alarm': 'alarm',
       'bell': 'bell',
       'soft': 'soft',
+      'tone': 'tone',
+      'tonee': 'tonee',
     };
 
     final soundFile = soundMap[ringtone] ?? 'alarm';
 
     return AndroidNotificationDetails(
-      channelId,
-      'Medicine Reminder',
+      'medicine_$ringtone',
+      'Medicine Reminder $ringtone',
+
       importance: Importance.max,
       priority: Priority.high,
+
       sound: RawResourceAndroidNotificationSound(soundFile),
+
       playSound: true,
       enableVibration: true,
       enableLights: true,
+
       fullScreenIntent: true,
       visibility: NotificationVisibility.public,
       category: AndroidNotificationCategory.alarm,
 
-      // ✅🔥 التعديل هنا
       actions: <AndroidNotificationAction>[
         AndroidNotificationAction(
           'taken',
@@ -146,20 +161,14 @@ class NotificationService {
           showsUserInterface: true,
         ),
         AndroidNotificationAction(
-          'skip',
-          'Skip ❌',
-          showsUserInterface: true, // 🔥 FIX
-        ),
-        AndroidNotificationAction(
           'snooze',
           'Snooze ⏳',
-          showsUserInterface: true, // 🔥 FIX
+          showsUserInterface: true,
         ),
       ],
     );
   }
 
-  // 🔔 SCHEDULE DAILY
   static Future<void> scheduleDailyNotification({
     required int id,
     required String title,
@@ -185,8 +194,6 @@ class NotificationService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    print("⏰ Daily Scheduling → $scheduledDate");
-
     await _notifications.zonedSchedule(
       id,
       title,
@@ -202,7 +209,6 @@ class NotificationService {
     );
   }
 
-  // 📅 SCHEDULE WEEKLY
   static Future<void> scheduleWeeklyNotification({
     required int id,
     required String title,
@@ -229,8 +235,6 @@ class NotificationService {
         scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
-
-    print("📅 Weekly Scheduling → $scheduledDate");
 
     await _notifications.zonedSchedule(
       id,

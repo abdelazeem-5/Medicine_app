@@ -37,11 +37,17 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
   String frequency = "Daily";
 
   final List<String> allDays = [
-    "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun"
   ];
+
   List<String> selectedDays = [];
 
-  // ✅ Map لتحويل اسم اليوم لـ int (DateTime weekday)
   final Map<String, int> _dayToWeekday = {
     "Mon": 1,
     "Tue": 2,
@@ -82,10 +88,11 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
   Future<void> _saveMedicine() async {
     if (_isSaving) return;
 
-    // ✅ تحقق لو Specific Days ومفيش أيام متحددة
     if (frequency == "Specific Days" && selectedDays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select at least one day")),
+        const SnackBar(
+          content: Text("Please select at least one day"),
+        ),
       );
       return;
     }
@@ -105,15 +112,21 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
         );
 
         if (scheduledTime.isBefore(now)) {
-          scheduledTime = scheduledTime.add(const Duration(days: 1));
+          scheduledTime = scheduledTime.add(
+            const Duration(days: 1),
+          );
         }
 
         final int notificationId =
             widget.notificationId ??
             DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-        // ✅ الغِ الإشعارات القديمة الأول
-        await NotificationService.cancelNotification(notificationId);
+
+        if (widget.notificationId != null) {
+          await NotificationService.cancelNotification(
+            widget.notificationId!,
+          );
+        }
 
         if (widget.medicineId == null) {
           await FirebaseService().addMedicine(
@@ -134,9 +147,7 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
           );
         }
 
-        // ✅ جدولة الإشعارات حسب الـ frequency
         if (frequency == "Daily") {
-          // إشعار يومي واحد
           await NotificationService.scheduleDailyNotification(
             id: notificationId,
             title: "Medicine Reminder 💊",
@@ -146,14 +157,14 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
             minute: selectedTime!.minute,
             ringtone: selectedRingtone,
           );
-        } else {
-          // ✅ Specific Days — إشعار لكل يوم محدد بـ id مختلف
+        }
+
+        else {
           for (int i = 0; i < selectedDays.length; i++) {
             final dayName = selectedDays[i];
             final weekday = _dayToWeekday[dayName]!;
-            final specificId = notificationId + i + 1;
 
-            await NotificationService.cancelNotification(specificId);
+            final specificId = notificationId + i + 1;
 
             await NotificationService.scheduleWeeklyNotification(
               id: specificId,
@@ -169,19 +180,31 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
         }
 
         if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Medicine saved successfully ✅"),
+          ),
+        );
+
         Navigator.pop(context);
 
       } catch (e) {
         if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+          SnackBar(
+            content: Text("Error: $e"),
+          ),
         );
       }
 
       setState(() => _isSaving = false);
     } else if (selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a time")),
+        const SnackBar(
+          content: Text("Please select a time"),
+        ),
       );
     }
   }
@@ -214,6 +237,7 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
 
   Widget _buildCard({required Widget child}) {
     final cardColor = Theme.of(context).cardColor;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -232,7 +256,9 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       appBar: AppBar(
-        title: Text(isEdit ? "Edit Medicine" : "Add Medicine"),
+        title: Text(
+          isEdit ? "Edit Medicine" : "Add Medicine",
+        ),
         backgroundColor: const Color(0xFF2C7DA0),
         foregroundColor: Colors.white,
       ),
@@ -252,15 +278,19 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
                       decoration: const InputDecoration(
                         labelText: "Medicine Name",
                       ),
-                      validator: (v) => v!.isEmpty ? "Enter name" : null,
+                      validator: (v) =>
+                          v!.isEmpty ? "Enter name" : null,
                     ),
+
                     const SizedBox(height: 15),
+
                     TextFormField(
                       controller: dosageController,
                       decoration: const InputDecoration(
                         labelText: "Quantity",
                       ),
-                      validator: (v) => v!.isEmpty ? "Enter Quantity" : null,
+                      validator: (v) =>
+                          v!.isEmpty ? "Enter Quantity" : null,
                     ),
                   ],
                 ),
@@ -288,23 +318,29 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text("Frequency"),
+
                     const SizedBox(height: 10),
 
                     DropdownButtonFormField<String>(
                       value: frequency,
                       items: const [
                         DropdownMenuItem(
-                            value: "Daily", child: Text("Daily")),
+                          value: "Daily",
+                          child: Text("Daily"),
+                        ),
                         DropdownMenuItem(
-                            value: "Specific Days",
-                            child: Text("Specific Days")),
+                          value: "Specific Days",
+                          child: Text("Specific Days"),
+                        ),
                       ],
-                      onChanged: (v) => setState(() => frequency = v!),
+                      onChanged: (v) =>
+                          setState(() => frequency = v!),
                     ),
 
                     const SizedBox(height: 15),
 
-                    if (frequency == "Specific Days") _buildDaysSelector(),
+                    if (frequency == "Specific Days")
+                      _buildDaysSelector(),
                   ],
                 ),
               ),
@@ -314,13 +350,33 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
               _buildCard(
                 child: DropdownButtonFormField<String>(
                   value: selectedRingtone,
-                  decoration: const InputDecoration(labelText: "Ringtone"),
+                  decoration: const InputDecoration(
+                    labelText: "Ringtone",
+                  ),
                   items: const [
-                    DropdownMenuItem(value: 'alarm', child: Text("Alarm")),
-                    DropdownMenuItem(value: 'bell', child: Text("Bell")),
-                    DropdownMenuItem(value: 'soft', child: Text("Soft")),
+                    DropdownMenuItem(
+                      value: 'alarm',
+                      child: Text("Alarm"),
+                    ),
+                    DropdownMenuItem(
+                      value: 'bell',
+                      child: Text("Bell"),
+                    ),
+                    DropdownMenuItem(
+                      value: 'soft',
+                      child: Text("Soft"),
+                    ),
+                    DropdownMenuItem(
+                      value: 'tone',
+                      child: Text("Tone"),
+                    ),
+                    DropdownMenuItem(
+                      value: 'tonee',
+                      child: Text("Tone 2"),
+                    ),
                   ],
-                  onChanged: (v) => setState(() => selectedRingtone = v!),
+                  onChanged: (v) =>
+                      setState(() => selectedRingtone = v!),
                 ),
               ),
 
@@ -336,10 +392,16 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
                 ),
                 onPressed: _isSaving ? null : _saveMedicine,
                 child: _isSaving
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const CircularProgressIndicator(
+                        color: Colors.white,
+                      )
                     : Text(
-                        isEdit ? "Update Medicine" : "Save Medicine",
-                        style: const TextStyle(color: Colors.white),
+                        isEdit
+                            ? "Update Medicine"
+                            : "Save Medicine",
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
                       ),
               ),
 

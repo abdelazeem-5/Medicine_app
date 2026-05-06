@@ -18,8 +18,8 @@ class _CalendarPageState extends State<CalendarPage> {
       List<QueryDocumentSnapshot> docs, DateTime day) {
 
     return docs.where((doc) {
-      final timestamp = doc['createdAt'] as Timestamp;
-      final date = timestamp.toDate();
+      final date = DateTime.parse(doc['time']);
+
 
       return date.year == day.year &&
           date.month == day.month &&
@@ -73,8 +73,7 @@ class _CalendarPageState extends State<CalendarPage> {
 
                 eventLoader: (day) {
                   return docs.where((doc) {
-                    final timestamp = doc['createdAt'] as Timestamp;
-                    final date = timestamp.toDate();
+                    final date = DateTime.parse(doc['time']);
 
                     return date.year == day.year &&
                         date.month == day.month &&
