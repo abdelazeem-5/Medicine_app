@@ -1,18 +1,21 @@
 import 'dart:io';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'package:medicine_app/main.dart';
 import 'package:medicine_app/screens/add_medicine.dart';
+
+import 'package:medicine_app/services/call_service.dart';
+import 'package:medicine_app/services/share_service.dart';
 import 'package:medicine_app/services/firebase_service.dart';
 import 'package:medicine_app/services/notification_service.dart';
 import 'package:medicine_app/services/theme_service.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:medicine_app/main.dart';
-import 'package:medicine_app/services/call_service.dart';
-import 'package:medicine_app/services/share_service.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,17 +26,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
-  String? _profileImagePath; 
+  String? _profileImagePath;
+
   @override
   void initState() {
     super.initState();
     _refreshUser();
-    _loadProfileImage();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
     _loadProfileImage();
   }
 
@@ -42,7 +40,6 @@ class _HomePageState extends State<HomePage> {
     final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
     final key = 'profile_image_$uid';
     final path = prefs.getString(key);
-
     if (mounted) {
       setState(() => _profileImagePath = path);
     }
@@ -171,26 +168,16 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushNamed(context, '/settings');
                   }),
 
-                // _drawerItem(Icons.person, "Edit Profile", () {
-                //   Navigator.pushNamed(context, '/profile').then((_) {
-                //     _loadProfileImage();
-                //   });
-                // }),
-                
+                  _drawerItem(Icons.person, "Edit Profile", () async {
+                    await Navigator.pushNamed(context, '/profile');
+                    await _loadProfileImage();
+                    if (mounted) setState(() {});
+                  }),
 
-                _drawerItem(Icons.person, "Edit Profile", () async {
-                await Navigator.pushNamed(context, '/profile');
+                  _drawerItem(Icons.call, "Emergency Call", () {
+                    CallService.makeEmergencyCall();
+                  }),
 
-                await _loadProfileImage();
-
-                if (mounted) {
-                  setState(() {});
-                }
-                }),
-
-                _drawerItem(Icons.call, "Emergency Call", () {
-                  CallService.makeEmergencyCall();
-                }),
                   const Divider(),
 
                   ListTile(
@@ -355,29 +342,24 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(height: 10),
                             Text("No medicines yet",
                                 style: TextStyle(
-                                    color:
-                                        theme.textTheme.bodyMedium?.color)),
+                                    color: theme.textTheme.bodyMedium?.color)),
                             const SizedBox(height: 5),
                             Text("Tap + to add",
-                                style:
-                                    TextStyle(color: theme.hintColor)),
+                                style: TextStyle(color: theme.hintColor)),
                           ],
                         ),
                       )
                     : ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                         itemCount: docs.length,
                         itemBuilder: (context, index) {
                           final doc = docs[index];
-                          final data =
-                              doc.data() as Map<String, dynamic>;
+                          final data = doc.data() as Map<String, dynamic>;
                           final docId = doc.id;
 
-                          DateTime medicineTime =
-                              parseTime(data['time']);
+                          DateTime medicineTime = parseTime(data['time']);
 
                           bool isTaken = data['taken'] == true;
                           bool isMissed =
@@ -404,90 +386,85 @@ class _HomePageState extends State<HomePage> {
                                   color: theme.iconTheme.color),
                               title: Text(data['name'] ?? "",
                                   style: TextStyle(
-                                      color: theme
-                                          .textTheme.bodyLarge?.color)),
+                                      color: theme.textTheme.bodyLarge?.color)),
                               subtitle: Text(
                                 "${data['dosage']} • ${TimeOfDay.fromDateTime(medicineTime).format(context)}",
-                                style:
-                                    TextStyle(color: theme.hintColor),
+                                style: TextStyle(color: theme.hintColor),
                               ),
-trailing: Row(
-  mainAxisSize: MainAxisSize.min,
-  children: [
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
 
-    IconButton(
-      icon: Icon(
-        isTaken
-            ? Icons.check_circle
-            : Icons.check_circle_outline,
-        color: isTaken
-            ? Colors.green
-            : Colors.grey,
-      ),
-      onPressed: () {
-        FirebaseService()
-            .updateMedicineStatus(
-                docId, !isTaken);
-      },
-    ),
+                                  IconButton(
+                                    icon: Icon(
+                                      isTaken
+                                          ? Icons.check_circle
+                                          : Icons.check_circle_outline,
+                                      color: isTaken
+                                          ? Colors.green
+                                          : Colors.grey,
+                                    ),
+                                    onPressed: () {
+                                      FirebaseService()
+                                          .updateMedicineStatus(
+                                              docId, !isTaken);
+                                    },
+                                  ),
 
-    IconButton(
-      icon: const Icon(Icons.edit,
-          color: Colors.blue),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AddMedicinePage(
-              medicineId: docId,
-              initialName: data['name'],
-              initialDosage:
-                  data['dosage'],
-              initialTime:
-                  parseTime(data['time']),
-              notificationId:
-                  data['notificationId'],
-              initialRingtone:
-                  data['ringtone'] ??
-                      'alarm',
-            ),
-          ),
-        );
-      },
-    ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.blue),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => AddMedicinePage(
+                                            medicineId: docId,
+                                            initialName: data['name'],
+                                            initialDosage: data['dosage'],
+                                            initialTime:
+                                                parseTime(data['time']),
+                                            notificationId:
+                                                data['notificationId'],
+                                            initialRingtone:
+                                                data['ringtone'] ?? 'alarm',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
 
-    IconButton(
-      icon: const Icon(Icons.share,
-          color: Colors.teal),
-      onPressed: () {
+                                  IconButton(
+                                    icon: const Icon(Icons.share,
+                                        color: Colors.teal),
+                                    onPressed: () {
+                                      ShareService.shareReminder(
+                                        medicineName: data['name'],
+                                        dosage: data['dosage'],
+                                        time: data['time'],
+                                      );
+                                    },
+                                  ),
 
-        ShareService.shareReminder(
-          medicineName: data['name'],
-          dosage: data['dosage'],
-          time: data['time'],
-        );
-      },
-    ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () async {
+                                      final int? notificationId =
+                                          data['notificationId'];
 
-    IconButton(
-      icon: const Icon(Icons.delete,
-          color: Colors.red),
-      onPressed: () async {
-        final int? notificationId =
-            data['notificationId'];
+                                      if (notificationId != null) {
+                                        await NotificationService
+                                            .cancelNotification(
+                                                notificationId);
+                                      }
 
-        if (notificationId != null) {
-          await NotificationService
-              .cancelNotification(
-                  notificationId);
-        }
-
-        await FirebaseService()
-            .deleteMedicine(docId);
-      },
-    ),
-  ],
-),
+                                      await FirebaseService()
+                                          .deleteMedicine(docId);
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },
@@ -601,5 +578,3 @@ trailing: Row(
     );
   }
 }
-
-
